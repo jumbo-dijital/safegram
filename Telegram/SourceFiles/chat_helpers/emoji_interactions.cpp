@@ -279,24 +279,26 @@ void EmojiInteractions::sendAccumulatedOutgoing(
 	}
 	const auto peer = item->history()->peer;
 	const auto emoji = from->emoji;
-	const auto requestId = _session->api().request(MTPmessages_SetTyping(
-		MTP_flags(0),
-		peer->input(),
-		MTPint(), // top_msg_id
-		MTP_sendMessageEmojiInteraction(
-			MTP_string(from->emoticon),
-			MTP_int(item->id),
-			MTP_dataJSON(MTP_bytes(ToJson(bunch))))
-	)).done([=](const MTPBool &result, mtpRequestId requestId) {
-		auto &sent = _playsSent[peer][emoji];
-		if (sent.lastRequestId == requestId) {
-			sent.lastDoneReceivedAt = crl::now();
-			if (!_checkTimer.isActive()) {
-				_checkTimer.callOnce(kAcceptSeenSinceRequest);
-			}
-		}
-	}).send();
-	_playsSent[peer][emoji] = PlaySent{ .lastRequestId = requestId };
+	// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate any
+	// lines of code that send user-visible changes to the Telegram network.
+	// const auto requestId = _session->api().request(MTPmessages_SetTyping(
+	// 	MTP_flags(0),
+	// 	peer->input(),
+	// 	MTPint(), // top_msg_id
+	// 	MTP_sendMessageEmojiInteraction(
+	// 		MTP_string(from->emoticon),
+	// 		MTP_int(item->id),
+	// 		MTP_dataJSON(MTP_bytes(ToJson(bunch))))
+	// )).done([=](const MTPBool &result, mtpRequestId requestId) {
+	// 	auto &sent = _playsSent[peer][emoji];
+	// 	if (sent.lastRequestId == requestId) {
+	// 		sent.lastDoneReceivedAt = crl::now();
+	// 		if (!_checkTimer.isActive()) {
+	// 			_checkTimer.callOnce(kAcceptSeenSinceRequest);
+	// 		}
+	// 	}
+	// }).send();
+	// _playsSent[peer][emoji] = PlaySent{ .lastRequestId = requestId };
 	animations.erase(from, till);
 }
 
@@ -424,12 +426,14 @@ void EmojiInteractions::playStarted(not_null<PeerData*> peer, QString emoji) {
 	if (i != end(map) && now - i->second < kAccumulateSeenRequests) {
 		return;
 	}
-	_session->api().request(MTPmessages_SetTyping(
-		MTP_flags(0),
-		peer->input(),
-		MTPint(), // top_msg_id
-		MTP_sendMessageEmojiInteractionSeen(MTP_string(emoji))
-	)).send();
+	// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate any
+	// lines of code that send user-visible changes to the Telegram network.
+	// _session->api().request(MTPmessages_SetTyping(
+	// 	MTP_flags(0),
+	// 	peer->input(),
+	// 	MTPint(), // top_msg_id
+	// 	MTP_sendMessageEmojiInteractionSeen(MTP_string(emoji))
+	// )).send();
 	map[emoji] = now;
 	if (!_checkTimer.isActive()) {
 		_checkTimer.callOnce(kAccumulateSeenRequests);

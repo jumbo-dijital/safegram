@@ -2162,6 +2162,9 @@ void ApiWrap::saveCurrentDraftToCloud() {
 }
 
 void ApiWrap::saveDraftsToCloud() {
+	// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate any
+	// lines of code that send user-visible changes to the Telegram network.
+	return;
 	for (auto i = begin(_draftsSaveRequestIds); i != end(_draftsSaveRequestIds);) {
 		const auto weak = i->first;
 		const auto thread = weak.get();

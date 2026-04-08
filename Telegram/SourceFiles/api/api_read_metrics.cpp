@@ -56,16 +56,21 @@ void ReadMetrics::send() {
 				_timer.callOnce(kSendTimeout);
 			}
 		};
-		const auto requestId = _api.request(MTPmessages_ReportReadMetrics(
-			peer->input(),
-			MTP_vector<MTPInputMessageReadMetric>(std::move(metrics))
-		)).done([=](const MTPBool &) {
-			finish();
-		}).fail([=](const MTP::Error &) {
-			finish();
-		}).send();
-
-		_requests.emplace(peer, requestId);
+		// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate
+		// any lines of code that send user-visible changes to the Telegram
+		// network.
+		// const auto requestId = _api.request(
+		// 	MTPmessages_ReportReadMetrics(
+		// 		peer->input(),
+		// 		MTP_vector<MTPInputMessageReadMetric>(
+		// 			std::move(metrics))
+		// )).done([=](const MTPBool &) {
+		// 	finish();
+		// }).fail([=](const MTP::Error &) {
+		// 	finish();
+		// }).send();
+		// _requests.emplace(peer, requestId);
+		finish();
 		i = _pending.erase(i);
 	}
 }

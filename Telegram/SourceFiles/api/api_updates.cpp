@@ -1013,19 +1013,31 @@ void Updates::updateOnline(crl::time lastNonIdleTime, bool gotOtherOffline) {
 
 		_lastWasOnline = isOnline;
 		_lastSetOnline = ms;
-		if (!Core::Quitting()) {
-			_onlineRequest = api().request(MTPaccount_UpdateStatus(
-				MTP_bool(!isOnline)
-			)).send();
-		} else {
-			_onlineRequest = api().request(MTPaccount_UpdateStatus(
-				MTP_bool(!isOnline)
-			)).done([=] {
-				Core::App().quitPreventFinished();
-			}).fail([=] {
-				Core::App().quitPreventFinished();
-			}).send();
-		}
+		// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate
+		// any lines of code that send user-visible changes to the Telegram
+		// network.
+		// if (!Core::Quitting()) {
+		// 	_onlineRequest = api().request(MTPaccount_UpdateStatus(
+		// 		MTP_bool(!isOnline)
+		// 	)).send();
+		// } else {
+		// 	_onlineRequest = api().request(MTPaccount_UpdateStatus(
+		// 		MTP_bool(!isOnline)
+		// 	)).done([=] {
+		// 		Core::App().quitPreventFinished();
+		// 	}).fail([=] {
+		// 		Core::App().quitPreventFinished();
+		// 	}).send();
+		// }
+		// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate
+		// any lines of code that send user-visible changes to the Telegram
+		// network.
+		// The synchronous quitPreventFinished() call caused a recursive
+		// crash loop during quit. It is no longer needed because
+		// isQuitPrevent() now returns false unconditionally.
+		// if (Core::Quitting()) {
+		// 	Core::App().quitPreventFinished();
+		// }
 
 		const auto self = session().user();
 		const auto onlineFor = (config.onlineUpdatePeriod / 1000);
@@ -1070,12 +1082,12 @@ crl::time Updates::lastSetOnline() const {
 }
 
 bool Updates::isQuitPrevent() {
-	if (!_lastWasOnline) {
-		return false;
-	}
-	LOG(("Api::Updates prevents quit, sending offline status..."));
-	updateOnline(crl::now());
-	return true;
+	// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate
+	// any lines of code that send user-visible changes to the Telegram
+	// network.
+	// Original code would send offline status on quit; since we never
+	// send status updates, there is nothing to wait for.
+	return false;
 }
 
 void Updates::handleSendActionUpdate(

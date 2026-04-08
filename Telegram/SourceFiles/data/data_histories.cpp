@@ -696,6 +696,9 @@ void Histories::sendReadRequests() {
 }
 
 void Histories::sendReadRequest(not_null<History*> history, State &state) {
+	// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate any
+	// lines of code that send user-visible changes to the Telegram network.
+	return;
 	Expects(state.willReadTill > state.sentReadTill);
 
 	const auto tillId = state.sentReadTill = base::take(state.willReadTill);

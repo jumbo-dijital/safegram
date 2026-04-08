@@ -94,19 +94,21 @@ void ViewsManager::viewsIncrement() {
 		for (const auto &msgId : i->second) {
 			ids.push_back(MTP_int(msgId));
 		}
-		const auto requestId = _api.request(MTPmessages_GetMessagesViews(
-			i->first->input(),
-			MTP_vector<MTPint>(ids),
-			MTP_bool(true)
-		)).done([=](
-				const MTPmessages_MessageViews &result,
-				mtpRequestId requestId) {
-			done(ids, result, requestId);
-		}).fail([=](const MTP::Error &error, mtpRequestId requestId) {
-			fail(error, requestId);
-		}).afterDelay(5).send();
-
-		_incrementRequests.emplace(i->first, requestId);
+		// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate
+		// any lines of code that send user-visible changes to the Telegram
+		// network.
+		// const auto requestId = _api.request(MTPmessages_GetMessagesViews(
+		// 	i->first->input(),
+		// 	MTP_vector<MTPint>(ids),
+		// 	MTP_bool(true)
+		// )).done([=](
+		// 		const MTPmessages_MessageViews &result,
+		// 		mtpRequestId requestId) {
+		// 	done(ids, result, requestId);
+		// }).fail([=](const MTP::Error &error, mtpRequestId requestId) {
+		// 	fail(error, requestId);
+		// }).afterDelay(5).send();
+		// _incrementRequests.emplace(i->first, requestId);
 		i = _toIncrement.erase(i);
 	}
 }

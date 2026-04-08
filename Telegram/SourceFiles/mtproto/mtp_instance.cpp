@@ -1016,6 +1016,58 @@ void Instance::Private::sendRequest(
 		crl::time msCanWait,
 		bool needsLayer,
 		mtpRequestId afterRequestId) {
+	// SAFEGRAM READ-ONLY ENFORCEMENT
+	// These hex method IDs correspond to Telegram API methods defined in
+	// Telegram/SourceFiles/mtproto/scheme/api.tl. Each method is identified
+	// by a unique 32-bit ID (the hex value after the '#' in the TL schema).
+	// When a request is serialized, this ID is written at buffer position
+	// kMessageBodyPosition (index 8). We extract it here and check against
+	// our blocklist of write operations — any method that could create a
+	// perceptible change for other Telegram users (read receipts, online
+	// status, typing indicators, message sends, reactions, etc.).
+	// If a request matches, it is silently dropped before reaching the
+	// network. This is a safety net; call sites are also individually
+	// disabled for defense-in-depth.
+	{
+		const auto &data = *request;
+		if (data.size() > SerializedRequest::kMessageBodyPosition) {
+			const auto methodId = static_cast<uint32>(
+				data[SerializedRequest::kMessageBodyPosition]);
+			static const auto kBlockedMethods = std::unordered_set<uint32>{
+				0x6628562cu, // account.updateStatus
+				0x0e306d3au, // messages.readHistory
+				0xcc104937u, // channels.readHistory
+				0x58943ee2u, // messages.setTyping
+				0x545cd15au, // messages.sendMessage
+				0x0330e77fu, // messages.sendMedia
+				0x13704a7cu, // messages.forwardMessages
+				0x51e842e1u, // messages.editMessage
+				0xd30d78d4u, // messages.sendReaction
+				0x54ae308eu, // messages.saveDraft
+				0x4067c5e6u, // messages.reportReadMetrics
+				0x5784d3e1u, // messages.getMessagesViews
+				0x5a6d7395u, // messages.reportMessagesDelivery
+				0x10ea6184u, // messages.sendVote
+				0xd2aaf7ecu, // messages.updatePinnedMessage
+				0x92ceddd4u, // messages.createChat
+				0xa1405817u, // messages.sendScreenshotNotification
+				0x9342ca07u, // messages.getBotCallbackAnswer
+				0x6c5cf2a7u, // messages.sendBotRequestedPeer
+				0xe47cb579u, // messages.togglePeerTranslations
+				0x91006707u, // channels.createChannel
+				0xa556dac8u, // stories.readStories
+				0xb2028afbu, // stories.incrementStoryViews
+				0x7fd736b2u, // stories.sendReaction
+				0x42ff96edu, // phone.requestCall
+				0x2efe1722u, // phone.confirmCall
+				0x17d54f61u, // phone.receivedCall
+			};
+			if (kBlockedMethods.contains(methodId)) {
+				return;
+			}
+		}
+	}
+
 	const auto session = getSession(shiftedDcId);
 
 	request->requestId = requestId;

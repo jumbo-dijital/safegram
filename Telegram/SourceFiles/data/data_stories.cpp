@@ -1398,11 +1398,14 @@ void Stories::sendMarkAsReadRequest(
 		checkQuitPreventFinished();
 	};
 
-	const auto api = &_owner->session().api();
-	api->request(MTPstories_ReadStories(
-		peer->input(),
-		MTP_int(tillId)
-	)).done(finish).fail(finish).send();
+	// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate any
+	// lines of code that send user-visible changes to the Telegram network.
+	// const auto api = &_owner->session().api();
+	// api->request(MTPstories_ReadStories(
+	// 	peer->input(),
+	// 	MTP_int(tillId)
+	// )).done(finish).fail(finish).send();
+	finish();
 }
 
 void Stories::checkQuitPreventFinished() {
@@ -1460,10 +1463,14 @@ void Stories::sendIncrementViewsRequests() {
 			}
 			checkQuitPreventFinished();
 		};
-		api->request(MTPstories_IncrementStoryViews(
-			_owner->peer(peer)->input(),
-			MTP_vector<MTPint>(std::move(ids))
-		)).done(finish).fail(finish).send();
+		// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate
+		// any lines of code that send user-visible changes to the Telegram
+		// network.
+		// api->request(MTPstories_IncrementStoryViews(
+		// 	_owner->peer(peer)->input(),
+		// 	MTP_vector<MTPint>(std::move(ids))
+		// )).done(finish).fail(finish).send();
+		finish();
 		_incrementViewsPending.remove(peer);
 	}
 }

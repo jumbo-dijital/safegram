@@ -109,6 +109,9 @@ bool SendProgressManager::updated(const Key &key, bool doing) {
 }
 
 void SendProgressManager::send(const Key &key, int progress) {
+	// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate any
+	// lines of code that send user-visible changes to the Telegram network.
+	return;
 	if (skipRequest(key)) {
 		return;
 	}
