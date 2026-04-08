@@ -4121,7 +4121,13 @@ void HistoryWidget::windowShown() {
 }
 
 bool HistoryWidget::markingMessagesRead() const {
-	return markingContentsRead() && !session().supportMode();
+	// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate
+	// any lines of code that send user-visible changes to the Telegram
+	// network.
+	// Returning false prevents the paint event from triggering local
+	// unread count decrements when messages become visible on screen.
+	return false;
+	// return markingContentsRead() && !session().supportMode();
 }
 
 bool HistoryWidget::markingContentsRead() const {
