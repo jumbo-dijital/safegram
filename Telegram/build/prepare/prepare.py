@@ -396,7 +396,7 @@ def runStages():
             if checkResult == 'Stale':
                 print('CHANGED, ', end='')
             if rebuildStale:
-                checkResult == 'Rebuild'
+                checkResult = 'Rebuild'
             else:
                 print('(r)ebuild, rebuild (a)ll, (s)kip, (p)rint, (q)uit?: ', end='', flush=True)
                 while True:
@@ -1682,6 +1682,7 @@ stage('tg_owt', """
     cd tg_owt
     git checkout 5c5c71258777d0196dbb3a09cc37d2f56ead28ab
     git submodule update --init --recursive
+    git apply ../patches/tg_owt.patch
 win:
     SET MOZJPEG_PATH=$LIBS_DIR/mozjpeg
     SET OPUS_PATH=$USED_PREFIX/include/opus
