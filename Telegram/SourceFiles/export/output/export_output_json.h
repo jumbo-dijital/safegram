@@ -98,6 +98,21 @@ private:
 		const QByteArray &about);
 	[[nodiscard]] Result writeChatsEnd();
 
+	[[nodiscard]] QByteArray pushNesting(
+		Context &context,
+		bool &hadItem,
+		Context::Type type);
+	[[nodiscard]] QByteArray prepareObjectItemStart(
+		Context &context,
+		bool &hadItem,
+		const QByteArray &key);
+	[[nodiscard]] QByteArray prepareArrayItemStart(
+		Context &context,
+		bool &hadItem);
+	[[nodiscard]] QByteArray popNesting(
+		Context &context,
+		bool &hadItem);
+
 	Settings _settings;
 	Environment _environment;
 	Stats *_stats = nullptr;
@@ -107,6 +122,13 @@ private:
 	DialogsMode _dialogsMode = DialogsMode::None;
 
 	std::unique_ptr<File> _output;
+
+	// Per-chat JSON file for split-by-chat output.
+	Data::DialogInfo _dialog;
+	int _chatIndex = 0;
+	Context _chatContext;
+	bool _chatNestingHadItem = false;
+	std::unique_ptr<File> _chatFile;
 
 };
 

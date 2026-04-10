@@ -31,19 +31,12 @@ QString NormalizePath(const Settings &settings) {
 	if (list.isEmpty() && !settings.forceSubPath) {
 		return result;
 	}
-	const auto date = QDate::currentDate();
+	const auto now = QDateTime::currentDateTime();
 	const auto base = QString(settings.onlySinglePeer()
 		? "ChatExport_%1"
 		: "DataExport_%1"
-	).arg(date.toString(Qt::ISODate));
-	const auto add = [&](int i) {
-		return base + (i ? " (" + QString::number(i) + ')' : QString());
-	};
-	auto index = 0;
-	while (QDir(result + add(index)).exists()) {
-		++index;
-	}
-	result += add(index) + '/';
+	).arg(now.toString("yyyy-MM-dd_HH-mm-ss"));
+	result += base + '/';
 	return result;
 }
 

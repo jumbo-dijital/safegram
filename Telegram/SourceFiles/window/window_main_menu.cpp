@@ -17,6 +17,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "calls/calls_box_controller.h"
 #include "calls/calls_instance.h"
 #include "core/application.h"
+#include "export/export_manager.h"
 #include "core/click_handler_types.h"
 #include "data/data_changes.h"
 #include "data/data_document_media.h"
@@ -742,6 +743,14 @@ void MainMenu::setupMenu() {
 		{ &st::menuIconSettings }
 	)->setClickedCallback([=] {
 		controller->showSettings();
+	});
+
+	addAction(
+		tr::lng_settings_export_data(),
+		{ &st::menuIconExport }
+	)->setClickedCallback([=] {
+		const auto session = &controller->session();
+		Core::App().exportManager().start(session);
 	});
 
 	_nightThemeToggle = addAction(

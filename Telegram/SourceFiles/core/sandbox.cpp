@@ -149,6 +149,13 @@ void Sandbox::QuitWhenStarted() {
 	if (!QApplication::instance() || !Instance()._started) {
 		QuitOnStartRequested = true;
 	} else {
+		// Ensure the Application and its MTP session threads are
+		// destroyed before Qt calls exit(). On macOS,
+		// [NSApplication terminate:] calls exit() directly after
+		// QCoreApplication::quit(), bypassing the normal event loop
+		// shutdown. Without this, MTP threads outlive the process
+		// and crash accessing destroyed global state.
+		Instance().closeApplication();
 		quit();
 	}
 }

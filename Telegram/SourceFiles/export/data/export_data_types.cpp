@@ -2512,6 +2512,18 @@ bool AddMigrateFromSlice(
 	return true;
 }
 
+QString SanitizedChatNameSuffix(const Utf8String &name) {
+	if (name.isEmpty()) {
+		return QString();
+	}
+	auto sanitized = QString::fromUtf8(name);
+	sanitized.replace(
+		QRegularExpression("[<>:\"/\\\\|?*]"),
+		QString("_"));
+	sanitized.truncate(100);
+	return " - " + sanitized;
+}
+
 void FinalizeDialogsInfo(DialogsInfo &info, const Settings &settings) {
 	auto &chats = info.chats;
 	auto &left = info.left;
@@ -2522,7 +2534,8 @@ void FinalizeDialogsInfo(DialogsInfo &info, const Settings &settings) {
 		const auto number = Data::NumberToString(++index, digits, '0');
 		dialog.relativePath = settings.onlySinglePeer()
 			? QString()
-			: "chats/chat_" + QString::fromUtf8(number) + '/';
+			: "chats/chat_" + QString::fromUtf8(number)
+				+ SanitizedChatNameSuffix(dialog.name) + '/';
 
 		using DialogType = DialogInfo::Type;
 		using Type = Settings::Type;
@@ -2548,7 +2561,9 @@ void FinalizeDialogsInfo(DialogsInfo &info, const Settings &settings) {
 		Assert(!settings.onlySinglePeer());
 
 		const auto number = Data::NumberToString(++index, digits, '0');
-		dialog.relativePath = "chats/chat_" + number + '/';
+		dialog.relativePath = "chats/chat_"
+			+ QString::fromUtf8(number)
+			+ SanitizedChatNameSuffix(dialog.name) + '/';
 		dialog.onlyMyMessages = true;
 	}
 }

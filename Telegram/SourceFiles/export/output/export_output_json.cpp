@@ -16,6 +16,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include <QtCore/QJsonObject>
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonValue>
+#include <QtCore/QRegularExpression>
 
 namespace Export {
 namespace Output {
@@ -1192,6 +1193,47 @@ QByteArray JsonWriter::popNesting() {
 		+ (type == Context::kObject ? '}' : ']');
 }
 
+QByteArray JsonWriter::pushNesting(
+		Context &context,
+		bool &hadItem,
+		Context::Type type) {
+	context.nesting.push_back(type);
+	hadItem = false;
+	return (type == Context::kObject ? "{" : "[");
+}
+
+QByteArray JsonWriter::prepareObjectItemStart(
+		Context &context,
+		bool &hadItem,
+		const QByteArray &key) {
+	const auto guard = gsl::finally([&] { hadItem = true; });
+	return (hadItem ? ",\n" : "\n")
+		+ Indentation(context)
+		+ SerializeString(key)
+		+ ": ";
+}
+
+QByteArray JsonWriter::prepareArrayItemStart(
+		Context &context,
+		bool &hadItem) {
+	const auto guard = gsl::finally([&] { hadItem = true; });
+	return (hadItem ? ",\n" : "\n") + Indentation(context);
+}
+
+QByteArray JsonWriter::popNesting(
+		Context &context,
+		bool &hadItem) {
+	Expects(!context.nesting.empty());
+
+	const auto type = Context::Type(context.nesting.back());
+	context.nesting.pop_back();
+
+	hadItem = true;
+	return '\n'
+		+ Indentation(context)
+		+ (type == Context::kObject ? '}' : ']');
+}
+
 Result JsonWriter::writePersonal(const Data::PersonalInfo &data) {
 	Expects(_output != nullptr);
 
@@ -1628,6 +1670,9 @@ Result JsonWriter::writeDialogsStart(const Data::DialogsInfo &data) {
 Result JsonWriter::writeDialogStart(const Data::DialogInfo &data) {
 	Expects(_output != nullptr);
 
+	_dialog = data;
+	++_chatIndex;
+
 	if (!_settings.onlySinglePeer()) {
 		const auto result = validateDialogsMode(data.isLeftChannel);
 		if (!result) {
@@ -1669,7 +1714,56 @@ Result JsonWriter::writeDialogStart(const Data::DialogInfo &data) {
 		+ Data::NumberToString(Data::PeerToBareId(data.peerId)));
 	block.append(prepareObjectItemStart("messages"));
 	block.append(pushNesting(Context::kArray));
-	return _output->writeBlock(block);
+	if (const auto result = _output->writeBlock(block); !result) {
+		return result;
+	}
+
+	// Open per-chat JSON file.
+	if (!_settings.onlySinglePeer()) {
+		auto sanitized = QString::fromUtf8(data.name);
+		sanitized.replace(
+			QRegularExpression("[<>:\"/\\\\|?*]"),
+			QString("_"));
+		sanitized.truncate(100);
+
+		const auto digits = 2;
+		const auto number = Data::NumberToString(_chatIndex, digits, '0');
+		const auto chatPath = "json/split-by-chat/chat_"
+			+ QString::fromUtf8(number)
+			+ (sanitized.isEmpty()
+				? QString()
+				: (" - " + sanitized))
+			+ ".json";
+
+		_chatFile = fileWithRelativePath(chatPath);
+		_chatContext = Context();
+		_chatNestingHadItem = false;
+
+		auto chatBlock = pushNesting(
+			_chatContext, _chatNestingHadItem, Context::kObject);
+		if (data.type != Type::Self
+			&& data.type != Type::Replies
+			&& data.type != Type::VerifyCodes) {
+			chatBlock.append(prepareObjectItemStart(
+				_chatContext, _chatNestingHadItem, "name")
+				+ StringAllowNull(data.name));
+		}
+		chatBlock.append(prepareObjectItemStart(
+			_chatContext, _chatNestingHadItem, "type")
+			+ StringAllowNull(TypeString(data.type)));
+		chatBlock.append(prepareObjectItemStart(
+			_chatContext, _chatNestingHadItem, "id")
+			+ Data::NumberToString(Data::PeerToBareId(data.peerId)));
+		chatBlock.append(prepareObjectItemStart(
+			_chatContext, _chatNestingHadItem, "messages"));
+		chatBlock.append(pushNesting(
+			_chatContext, _chatNestingHadItem, Context::kArray));
+		if (const auto result = _chatFile->writeBlock(chatBlock); !result) {
+			return result;
+		}
+	}
+
+	return Result::Success();
 }
 
 Result JsonWriter::validateDialogsMode(bool isLeftChannel) {
@@ -1695,6 +1789,7 @@ Result JsonWriter::writeDialogSlice(const Data::MessagesSlice &data) {
 	Expects(_output != nullptr);
 
 	auto block = QByteArray();
+	auto chatBlock = QByteArray();
 	for (const auto &message : data.list) {
 		if (Data::SkipMessageByDate(message, _settings)) {
 			continue;
@@ -1704,15 +1799,53 @@ Result JsonWriter::writeDialogSlice(const Data::MessagesSlice &data) {
 			message,
 			data.peers,
 			_environment.internalLinksDomain));
+		if (_chatFile) {
+			chatBlock.append(
+				prepareArrayItemStart(
+					_chatContext, _chatNestingHadItem)
+				+ SerializeMessage(
+					_chatContext,
+					message,
+					data.peers,
+					_environment.internalLinksDomain));
+		}
 	}
-	return block.isEmpty() ? Result::Success() : _output->writeBlock(block);
+	if (!block.isEmpty()) {
+		if (const auto result = _output->writeBlock(block); !result) {
+			return result;
+		}
+	}
+	if (_chatFile && !chatBlock.isEmpty()) {
+		if (const auto result = _chatFile->writeBlock(chatBlock); !result) {
+			return result;
+		}
+	}
+	return Result::Success();
 }
 
 Result JsonWriter::writeDialogEnd() {
 	Expects(_output != nullptr);
 
 	auto block = popNesting();
-	return _output->writeBlock(block + popNesting());
+	if (const auto result = _output->writeBlock(block + popNesting());
+			!result) {
+		return result;
+	}
+
+	// Close per-chat JSON file.
+	if (_chatFile) {
+		auto chatBlock = popNesting(
+			_chatContext, _chatNestingHadItem);
+		chatBlock.append(popNesting(
+			_chatContext, _chatNestingHadItem));
+		chatBlock.append('\n');
+		if (const auto result = _chatFile->writeBlock(chatBlock); !result) {
+			return result;
+		}
+		_chatFile = nullptr;
+	}
+
+	return Result::Success();
 }
 
 Result JsonWriter::writeDialogsEnd() {
@@ -1759,7 +1892,7 @@ QString JsonWriter::mainFilePath() {
 }
 
 QString JsonWriter::mainFileRelativePath() const {
-	return "result.json";
+	return "json/combined/export-all_messages.json";
 }
 
 QString JsonWriter::pathWithRelativePath(const QString &path) const {

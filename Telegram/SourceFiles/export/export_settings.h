@@ -34,10 +34,10 @@ struct MediaSettings {
 	friend inline constexpr auto is_flag_type(Type) { return true; };
 
 	Types types = DefaultTypes();
-	int64 sizeLimit = 8 * 1024 * 1024;
+	int64 sizeLimit = 4000 * int64(1024 * 1024);
 
 	static inline Types DefaultTypes() {
-		return Type::Photo;
+		return Type::AllMask;
 	}
 
 };
@@ -78,7 +78,7 @@ struct Settings {
 
 	QString path;
 	bool forceSubPath = false;
-	Output::Format format = Output::Format();
+	Output::Format format = Output::Format(2); // HtmlAndJson
 
 	Types types = DefaultTypes();
 	Types fullChats = DefaultFullChats();
@@ -103,18 +103,14 @@ struct Settings {
 	}
 
 	static inline Types DefaultTypes() {
-		return Type::PersonalInfo
-			| Type::Userpics
-			| Type::Contacts
-			| Type::Stories
-			| Type::ProfileMusic
-			| Type::PersonalChats
-			| Type::PrivateGroups;
+		return Type::AllMask;
 	}
 
 	static inline Types DefaultFullChats() {
 		return Type::PersonalChats
-			| Type::BotChats;
+			| Type::BotChats
+			| Type::PrivateGroups
+			| Type::PrivateChannels;
 	}
 
 };

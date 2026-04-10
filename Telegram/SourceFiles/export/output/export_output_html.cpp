@@ -16,12 +16,15 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include <QtCore/QSize>
 #include <QtCore/QFile>
 #include <QtCore/QDateTime>
+#include <QtCore/QRegularExpression>
+
+#include <limits>
 
 namespace Export {
 namespace Output {
 namespace {
 
-constexpr auto kMessagesInFile = 1000;
+constexpr auto kMessagesInFile = std::numeric_limits<int>::max();
 constexpr auto kPersonalUserpicSize = 90;
 constexpr auto kEntryUserpicSize = 48;
 constexpr auto kServiceMessagePhotoSize = 60;
@@ -3859,9 +3862,19 @@ QString HtmlWriter::pathWithRelativePath(const QString &path) const {
 }
 
 QString HtmlWriter::messagesFile(int index) const {
-	return "messages"
-		+ (index > 0 ? QString::number(index + 1) : QString())
-		+ ".html";
+	auto name = QString("messages");
+	if (!_dialog.name.isEmpty()) {
+		auto sanitized = QString::fromUtf8(_dialog.name);
+		sanitized.replace(
+			QRegularExpression("[<>:\"/\\\\|?*]"),
+			QString("_"));
+		sanitized.truncate(100);
+		name += " - " + sanitized;
+	}
+	if (index > 0) {
+		name += QString::number(index + 1);
+	}
+	return name + ".html";
 }
 
 std::unique_ptr<HtmlWriter::Wrap> HtmlWriter::fileWithRelativePath(
