@@ -189,6 +189,12 @@ void PanelController::createPanel() {
 }
 
 void PanelController::showSettings() {
+	// Access the output directory early to trigger the macOS file
+	// permission prompt while the settings panel is still showing.
+	// If deferred until after showProgress() sets hideOnDeactivate,
+	// the permission dialog steals focus and the panel auto-hides.
+	QDir(_settings->path).exists();
+
 	auto settings = base::make_unique_q<SettingsWidget>(
 		_panel,
 		_session,
@@ -332,7 +338,6 @@ void PanelController::showProgress() {
 	}, progress->lifetime());
 
 	_panel->showInner(std::move(progress));
-	_panel->setHideOnDeactivate(true);
 }
 
 void PanelController::stopWithConfirmation(Fn<void()> callback) {

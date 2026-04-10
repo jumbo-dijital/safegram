@@ -889,7 +889,10 @@ void SettingsWidget::refreshButtons(
 		: nullptr;
 	if (start) {
 		start->show();
-		_startClicks = start->clicks() | rpl::to_empty;
+		start->clicks(
+		) | rpl::to_empty | rpl::on_next([=] {
+			_startClicks.fire({});
+		}, start->lifetime());
 
 		container->sizeValue(
 		) | rpl::on_next([=](QSize size) {
@@ -904,7 +907,10 @@ void SettingsWidget::refreshButtons(
 		tr::lng_cancel(),
 		st::defaultBoxButton);
 	cancel->show();
-	_cancelClicks = cancel->clicks() | rpl::to_empty;
+	cancel->clicks(
+	) | rpl::to_empty | rpl::on_next([=] {
+		_cancelClicks.fire({});
+	}, cancel->lifetime());
 
 	rpl::combine(
 		container->sizeValue(),
@@ -940,17 +946,11 @@ rpl::producer<Settings> SettingsWidget::value() const {
 }
 
 rpl::producer<> SettingsWidget::startClicks() const {
-	return _startClicks.value(
-	) | rpl::map([](Wrap &&wrap) {
-		return std::move(wrap.value);
-	}) | rpl::flatten_latest();
+	return _startClicks.events();
 }
 
 rpl::producer<> SettingsWidget::cancelClicks() const {
-	return _cancelClicks.value(
-	) | rpl::map([](Wrap &&wrap) {
-		return std::move(wrap.value);
-	}) | rpl::flatten_latest();
+	return _cancelClicks.events();
 }
 
 } // namespace View

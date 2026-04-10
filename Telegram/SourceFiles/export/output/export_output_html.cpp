@@ -3482,13 +3482,13 @@ Result HtmlWriter::writeDialogsStart(const Data::DialogsInfo &data) {
 Result HtmlWriter::writeDialogStart(const Data::DialogInfo &data) {
 	Expects(_chat == nullptr);
 
+	_dialog = data;
 	_chat = fileWithRelativePath(data.relativePath + messagesFile(0));
 	_chatFileEmpty = true;
 	_messagesCount = 0;
 	_dateMessageId = 0;
 	_lastMessageInfo = nullptr;
 	_lastMessageIdsPerFile.clear();
-	_dialog = data;
 	return Result::Success();
 }
 
