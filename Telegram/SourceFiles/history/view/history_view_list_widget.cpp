@@ -1211,15 +1211,12 @@ void ListWidget::scrollDateCheck() {
 		}
 		_scrollDateLastItem = _visibleTopItem;
 		_scrollDateLastItemTop = _visibleTopFromItem;
-		_scrollDateHideTimer.callOnce(st::historyScrollDateHideTimeout);
 	}
 }
 
 void ListWidget::scrollDateHideByTimer() {
-	_scrollDateHideTimer.cancel();
-	if (!_scrollDateLink || ClickHandler::getPressed() != _scrollDateLink) {
-		scrollDateHide();
-	}
+	// DEACTIVATED: Deliberately disabled for Safegram.
+	// The floating date badge should remain visible at all times.
 }
 
 void ListWidget::scrollDateHide() {
@@ -1234,7 +1231,6 @@ void ListWidget::keepScrollDateForNow() {
 		&& _scrollDateOpacity.animating()) {
 		toggleScrollDateShown();
 	}
-	_scrollDateHideTimer.callOnce(st::historyScrollDateHideTimeout);
 }
 
 void ListWidget::toggleScrollDateShown() {

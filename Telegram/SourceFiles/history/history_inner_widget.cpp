@@ -3982,15 +3982,12 @@ void HistoryInner::scrollDateCheck() {
 		}
 		_scrollDateLastItem = newScrollDateItem;
 		_scrollDateLastItemTop = newScrollDateItemTop;
-		_scrollDateHideTimer.callOnce(kScrollDateHideTimeout);
 	}
 }
 
 void HistoryInner::scrollDateHideByTimer() {
-	_scrollDateHideTimer.cancel();
-	if (!_scrollDateLink || ClickHandler::getPressed() != _scrollDateLink) {
-		scrollDateHide();
-	}
+	// DEACTIVATED: Deliberately disabled for Safegram.
+	// The floating date badge should remain visible at all times.
 }
 
 void HistoryInner::scrollDateHide() {
@@ -4003,7 +4000,6 @@ void HistoryInner::keepScrollDateForNow() {
 	if (!_scrollDateShown && _scrollDateLastItem && _scrollDateOpacity.animating()) {
 		toggleScrollDateShown();
 	}
-	_scrollDateHideTimer.callOnce(kScrollDateHideTimeout);
 }
 
 void HistoryInner::toggleScrollDateShown() {
