@@ -4078,6 +4078,10 @@ void InnerWidget::peerSearchReceived(Api::PeerSearchResult result) {
 		return;
 	}
 
+	// DEACTIVATED: Deliberately disabled for Safegram. Do not reinstate.
+	// Hide global/public channel search results entirely.
+	return;
+
 	_peerSearchQuery = result.query.toLower().trimmed();
 	clearPeerSearchResults();
 	_peerSearchResults.reserve(result.peers.size()
